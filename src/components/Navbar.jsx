@@ -126,13 +126,13 @@ function Navbar({ user, setUser }) {
               <a
                 key={link.name}
                 href="/#testimonials"
-                onClick={(e) => { handleReviewsClick(e); toggleMenu(); }}
+                onClick={(e) => { handleReviewsClick(e); setIsOpen(false); }}
                 className="text-base font-medium text-slate-700 hover:text-blue-600"
               >
                 {link.name}
               </a>
             ) : (
-              <Link key={link.name} to={link.href} className="text-base font-medium text-slate-700 hover:text-blue-600" onClick={toggleMenu}>
+              <Link key={link.name} to={link.href} className="text-base font-medium text-slate-700 hover:text-blue-600" onClick={() => setIsOpen(false)}>
                 {link.name}
               </Link>
             )
@@ -142,8 +142,8 @@ function Navbar({ user, setUser }) {
               <button onClick={handleLogout} className="w-full text-center px-4 py-2 text-slate-700 font-semibold">Log out</button>
             ) : (
               <>
-                <Link to="/login" className="w-full text-center px-4 py-2 text-slate-700 font-semibold">Log in</Link>
-                <Link to="/login?mode=signup" className="w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700">
+                <Link to="/login" className="w-full text-center px-4 py-2 text-slate-700 font-semibold" onClick={() => setIsOpen(false)}>Log in</Link>
+                <Link to="/login?mode=signup" className="w-full text-center px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700" onClick={() => setIsOpen(false)}>
                   Sign up
                 </Link>
               </>
