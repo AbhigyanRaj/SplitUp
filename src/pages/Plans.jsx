@@ -75,7 +75,7 @@ const subscriptions = [
       { label: 'Split between', value: '4 people' },
     ],
   },
-  { name: 'Hulu', logo: null, status: 'coming-soon' },
+  { name: 'ChatGpt', logo: null, status: 'coming-soon' },
   { name: 'HBO Max', logo: null, status: 'coming-soon' },
   { name: 'Disney+', logo: null, status: 'coming-soon' },
   { name: 'YouTube Premium', logo: null, status: 'coming-soon' },
