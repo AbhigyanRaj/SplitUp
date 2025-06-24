@@ -1,0 +1,300 @@
+import React, { useState, useEffect, useRef } from 'react';
+import UserDetailsForm from './UserDetailsForm';
+
+const subscriptions = [
+  {
+    name: 'Netflix',
+    logo: '/netflix.png',
+    plan: '5-person plan',
+    planType: 'Premium 4K + HDR',
+    price: 139,
+    fee: 49,
+    status: 'active',
+    brandColor: 'bg-slate-50',
+    details: [
+      { label: 'Monthly price', value: '₹649' },
+      { label: 'Video and sound quality', value: 'Best' },
+      { label: 'Resolution', value: '4K (Ultra HD) + HDR' },
+      { label: 'Spatial audio (immersive sound)', value: 'Included' },
+      { label: 'Supported devices', value: 'TV, computer, mobile phone, tablet' },
+      { label: 'Devices your household can watch at the same time', value: '4' },
+      { label: 'Download devices', value: '6' },
+      { label: 'Split between', value: '5 people' },
+    ],
+  },
+  {
+    name: 'Spotify',
+    logo: '/spotify2.png',
+    plan: '6-person plan',
+    planType: 'Premium Family',
+    price: 34,
+    fee: 49,
+    status: 'active',
+    brandColor: 'bg-slate-50',
+    details: [
+      { label: 'Monthly price', value: '₹199' },
+      { label: 'Audio quality', value: 'High' },
+      { label: 'Ad-free music', value: 'Yes' },
+      { label: 'Offline listening', value: 'Yes' },
+      { label: 'Supported devices', value: 'Phone, tablet, computer' },
+      { label: 'Accounts included', value: '6' },
+      { label: 'Split between', value: '6 people' },
+    ],
+  },
+  {
+    name: 'Prime Video',
+    logo: '/primevideo2.png',
+    plan: '4-person plan',
+    planType: 'Prime Video',
+    price: 89,
+    fee: 49,
+    status: 'active',
+    brandColor: 'bg-slate-50',
+    details: [
+      { label: 'Monthly price', value: '₹299' },
+      { label: 'Video quality', value: 'HD/UHD' },
+      { label: 'Supported devices', value: 'TV, computer, mobile phone, tablet' },
+      { label: 'Simultaneous streams', value: '3' },
+      { label: 'Split between', value: '4 people' },
+    ],
+  },
+  {
+    name: 'Hotstar',
+    logo: '/hotstar.webp',
+    plan: '4-person plan',
+    planType: 'Premium',
+    price: 139,
+    fee: 49,
+    status: 'active',
+    brandColor: 'bg-slate-50',
+    details: [
+      { label: 'Monthly price', value: '₹299' },
+      { label: 'Video quality', value: '4K (Ultra HD)' },
+      { label: 'Supported devices', value: 'TV, computer, mobile phone, tablet' },
+      { label: 'Simultaneous streams', value: '4' },
+      { label: 'Split between', value: '4 people' },
+    ],
+  },
+  { name: 'Hulu', logo: null, status: 'coming-soon' },
+  { name: 'HBO Max', logo: null, status: 'coming-soon' },
+  { name: 'Disney+', logo: null, status: 'coming-soon' },
+  { name: 'YouTube Premium', logo: null, status: 'coming-soon' },
+];
+
+const LogoPlaceholder = ({ name }) => (
+    <div className="w-full h-full flex items-center justify-center rounded-lg bg-slate-200">
+        <span className="font-bold text-slate-500 text-lg text-center p-2">{name}</span>
+    </div>
+);
+
+function Plans() {
+  const [selected, setSelected] = useState(null);
+  const [showUserForm, setShowUserForm] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
+  const plansContainerRef = useRef(null);
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    if (selected !== null) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [selected]);
+
+  // Dummy payment modal
+  const PaymentModal = ({ open, onClose, plan, bookingAmount }) => {
+    if (!open) return null;
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2 sm:px-0">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full relative animate-fadeInUp">
+          <button
+            className="absolute -top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow text-slate-700 hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all z-10"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <div className="px-6 py-8">
+            <h3 className="text-xl font-bold text-slate-900 mb-4">Select payment method</h3>
+            <div className="flex flex-col gap-3 mb-6">
+              <button className="w-full py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">UPI</button>
+              <button className="w-full py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">Credit/Debit Card</button>
+              <button className="w-full py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">Netbanking</button>
+            </div>
+            <button className="w-full py-3 rounded-lg bg-blue-600 text-white font-bold text-lg shadow hover:bg-blue-700 transition-colors">Complete Payment (₹{bookingAmount})</button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal component
+  const PlanModal = ({ plan, onClose }) => {
+    const splitAmount = plan.price;
+    const bookingAmount = Math.ceil(plan.price * 0.10);
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2 sm:px-0">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full relative animate-fadeInUp">
+          <button
+            className="absolute -top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white border border-slate-200 shadow text-slate-700 hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 transition-all z-10"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+              <path fillRule="evenodd" d="M10 8.586l4.95-4.95a1 1 0 111.414 1.414L11.414 10l4.95 4.95a1 1 0 01-1.414 1.414L10 11.414l-4.95 4.95a1 1 0 01-1.414-1.414L8.586 10l-4.95-4.95A1 1 0 115.05 3.636L10 8.586z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <div className={`rounded-t-2xl p-6 pb-4 ${plan.brandColor} flex flex-col gap-1 relative`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 mb-1">{plan.name}</h3>
+                <div className="text-base font-medium text-slate-700">{plan.planType}</div>
+              </div>
+              {plan.logo && (
+                <img src={plan.logo} alt={plan.name + ' logo'} className="w-10 h-10 object-contain rounded-lg shadow-sm" />
+              )}
+            </div>
+          </div>
+          <div className="px-6 py-4 space-y-4">
+            <ul className="divide-y divide-slate-200">
+              {plan.details.map((item, idx) => (
+                <li key={idx} className="py-2 flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                  <span className="text-slate-500 text-sm sm:text-base">{item.label}</span>
+                  <span className="font-medium text-slate-800 text-sm sm:text-base mt-1 sm:mt-0">{item.value}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="bg-slate-50 rounded-lg p-4 flex flex-col gap-2 border border-slate-100">
+              <div className="flex justify-between items-center text-base">
+                <span className="text-slate-600">Your split amount</span>
+                <span className="font-bold text-slate-900">₹{splitAmount}</span>
+              </div>
+              <div className="flex justify-between items-center text-base">
+                <span className="text-slate-600">Booking amount <span className="text-xs text-slate-400">(10% of split)</span></span>
+                <span className="font-bold text-blue-600">₹{bookingAmount}</span>
+              </div>
+            </div>
+            <button
+              className="w-full mt-2 py-3 rounded-lg bg-blue-600 text-white font-bold text-lg shadow hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+              onClick={() => { setShowUserForm(true); }}
+            >
+              Book now &nbsp; <span className="text-base font-semibold">₹{bookingAmount}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <main className="bg-white" onClick={(e) => {
+      if (e.target === e.currentTarget) {
+        setSelected(null);
+        setShowUserForm(false);
+        setShowPayment(false);
+      }
+    }}>
+      <section className="pt-32 pb-20 md:pt-40 md:pb-28">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900">Split your subscriptions with friends</h1>
+            <p className="mt-4 text-lg text-slate-600 max-w-3xl mx-auto">
+              Choose a subscription you want to share. We handle the group, the payments, and the security. You just save.
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-2 text-slate-500">
+              <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" />
+              </svg>
+              <span className="text-sm font-medium">A secure platform proudly incubated at <span className='text-blue-600'>IIIT Delhi.</span></span>
+            </div>
+          </div>
+          <div ref={plansContainerRef} className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+            {subscriptions.map((sub, index) => {
+              if (sub.status === 'active') {
+                // Calculate discount percentage
+                let original = 0;
+                if (sub.details && sub.details.length > 0) {
+                  const monthly = sub.details.find(d => d.label.toLowerCase().includes('monthly price'));
+                  if (monthly) {
+                    original = parseInt(monthly.value.replace(/[^\d]/g, ''));
+                  }
+                }
+                const discount = original ? Math.round(100 * (1 - sub.price / original)) : null;
+                return (
+                  <button
+                    key={sub.name}
+                    className={`text-left rounded-xl p-2 cursor-pointer transition-all duration-300 ease-in-out focus:outline-none hover:scale-105 hover:shadow-xl ${selected === index ? 'ring-2 ring-blue-600 scale-105 shadow-xl' : 'shadow-md'}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelected(index);
+                    }}
+                  >
+                    <div className={`aspect-square rounded-lg mb-4 flex items-center justify-center p-4 ${sub.brandColor}`}>
+                      {sub.logo ? (
+                          <img src={sub.logo} alt={`${sub.name} logo`} className="max-h-16 w-auto object-contain" />
+                      ) : (
+                          <LogoPlaceholder name={sub.name} />
+                      )}
+                    </div>
+                    <div className="px-1 relative">
+                      <p className="font-semibold text-slate-800">{sub.planType} <span className="block text-xs text-slate-500 font-normal">({sub.plan})</span></p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-sm text-slate-500"><span className="font-bold text-slate-900">₹{sub.price}</span>/mo <span className='text-slate-400'>+ taxes</span></p>
+                        {discount !== null && (
+                          <span className="ml-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-500 text-xs font-semibold whitespace-nowrap">{discount}% off</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                )
+              } else {
+                return (
+                  <div key={sub.name} className="text-left rounded-xl p-2">
+                    <div className="relative aspect-square rounded-lg mb-4 flex items-center justify-center p-4 bg-slate-100 border-2 border-dashed border-slate-300">
+                        <LogoPlaceholder name={sub.name} />
+                        <div className="absolute inset-0 flex items-center justify-center bg-white/50">
+                            <span className="bg-slate-700 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                                Coming Soon
+                            </span>
+                        </div>
+                    </div>
+                    <div className="px-1">
+                      <p className="font-semibold text-slate-500">{sub.name}</p>
+                      <p className="text-sm text-slate-400">Not yet available</p>
+                    </div>
+                  </div>
+                )
+              }
+            })}
+          </div>
+        </div>
+        {selected !== null && !showUserForm && !showPayment && (
+          <PlanModal plan={subscriptions[selected]} onClose={() => setSelected(null)} />
+        )}
+        {selected !== null && showUserForm && !showPayment && (
+          <UserDetailsForm
+            open={true}
+            plan={subscriptions[selected]}
+            onClose={() => { setShowUserForm(false); setSelected(null); }}
+            onPay={(details) => { setUserDetails(details); setShowUserForm(false); setShowPayment(true); }}
+          />
+        )}
+        {selected !== null && showPayment && (
+          <PaymentModal
+            open={true}
+            plan={subscriptions[selected]}
+            bookingAmount={Math.ceil(subscriptions[selected].price * 0.10)}
+            onClose={() => { setShowPayment(false); setSelected(null); }}
+          />
+        )}
+      </section>
+    </main>
+  );
+}
+
+export default Plans; 
