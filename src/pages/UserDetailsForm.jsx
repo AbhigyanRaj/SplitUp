@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 
-function UserDetailsForm({ open, onClose, onPay, plan }) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+function UserDetailsForm({ open, onClose, onPay, plan, user }) {
+  const [name, setName] = useState(user?.displayName || '');
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
 
@@ -10,12 +9,12 @@ function UserDetailsForm({ open, onClose, onPay, plan }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!name || !email || !phone) {
+    if (!name || !phone) {
       setError('Please fill all fields');
       return;
     }
     setError('');
-    onPay({ name, email, phone });
+    onPay({ name, email: user?.email, phone });
   };
 
   return (
@@ -41,14 +40,10 @@ function UserDetailsForm({ open, onClose, onPay, plan }) {
               onChange={e => setName(e.target.value)}
               required
             />
-            <input
-              type="email"
-              placeholder="Email"
-              className="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:outline-none text-slate-900 bg-slate-50"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-            />
+            <div className="w-full px-4 py-3 rounded-lg border border-slate-200 bg-slate-100 text-slate-500 flex items-center gap-2">
+              <span className="font-medium">Google Email:</span>
+              <span className="text-slate-700 font-mono truncate">{user?.email || 'Not logged in'}</span>
+            </div>
             <input
               type="tel"
               placeholder="Phone Number"

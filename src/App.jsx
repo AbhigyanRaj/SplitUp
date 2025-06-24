@@ -28,7 +28,7 @@ function App() {
       <Navbar user={user} setUser={setUser} />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/plans" element={<Plans />} />
+        <Route path="/plans" element={<Plans user={user} setUser={setUser} />} />
         <Route path="/reviews" element={<DummyPage title="Reviews" />} />
         <Route path="/blog" element={<DummyPage title="Blog" />} />
         <Route path="/login" element={<LoginPage user={user} setUser={setUser} />} />

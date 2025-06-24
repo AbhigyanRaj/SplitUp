@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import UserDetailsForm from './UserDetailsForm';
+import { db } from '../services/firebase/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const subscriptions = [
   {
@@ -87,12 +90,15 @@ const LogoPlaceholder = ({ name }) => (
     </div>
 );
 
-function Plans() {
+function Plans({ user, setUser }) {
   const [selected, setSelected] = useState(null);
   const [showUserForm, setShowUserForm] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const plansContainerRef = useRef(null);
+  const navigate = useNavigate();
 
   // Prevent background scroll when modal is open
   useEffect(() => {
@@ -104,9 +110,71 @@ function Plans() {
     return () => { document.body.style.overflow = ''; };
   }, [selected]);
 
+  // Helper: Check auth and redirect if needed
+  const handleBookNow = (planIdx) => {
+    if (!user) {
+      // Save intended plan index in sessionStorage for redirect after login
+      sessionStorage.setItem('splitup_redirect_plan', planIdx);
+      navigate('/login');
+      return;
+    }
+    setSelected(planIdx);
+    setShowUserForm(true);
+  };
+
+  // On mount, check if redirected from login
+  useEffect(() => {
+    if (user) {
+      const planIdx = sessionStorage.getItem('splitup_redirect_plan');
+      if (planIdx !== null) {
+        setSelected(Number(planIdx));
+        setShowUserForm(true);
+        sessionStorage.removeItem('splitup_redirect_plan');
+      }
+    }
+  }, [user]);
+
   // Dummy payment modal
   const PaymentModal = ({ open, onClose, plan, bookingAmount }) => {
     if (!open) return null;
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleCompletePayment = async () => {
+      if (!paymentMethod) {
+        setError('Please select a payment method');
+        return;
+      }
+      setLoading(true);
+      setError('');
+      try {
+        await addDoc(collection(db, 'payments'), {
+          name: userDetails?.name,
+          email: userDetails?.email,
+          phone: userDetails?.phone,
+          subscriptionType: plan.name,
+          planType: plan.planType,
+          numberOfPeople: plan.details?.find(d => d.label.toLowerCase().includes('split between'))?.value || '',
+          amountPaid: bookingAmount,
+          amountRemaining: plan.price - bookingAmount,
+          totalAmount: plan.price,
+          paymentMethod,
+          timestamp: serverTimestamp(),
+          status: 'pending',
+        });
+        setSuccessMsg('Payment Successful!');
+        setShowPayment(false);
+        setTimeout(() => {
+          setSuccessMsg('');
+          setSelected(null);
+        }, 2000);
+      } catch (e) {
+        setError('Failed to save payment. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-2 sm:px-0">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full relative animate-fadeInUp">
@@ -122,11 +190,14 @@ function Plans() {
           <div className="px-6 py-8">
             <h3 className="text-xl font-bold text-slate-900 mb-4">Select payment method</h3>
             <div className="flex flex-col gap-3 mb-6">
-              <button className="w-full py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">UPI</button>
-              <button className="w-full py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">Credit/Debit Card</button>
-              <button className="w-full py-3 rounded-lg border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition">Netbanking</button>
+              <button onClick={() => setPaymentMethod('UPI')} className={`w-full py-3 rounded-lg border ${paymentMethod === 'UPI' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'} text-slate-700 font-medium hover:bg-slate-50 transition`}>UPI</button>
+              <button onClick={() => setPaymentMethod('Card')} className={`w-full py-3 rounded-lg border ${paymentMethod === 'Card' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'} text-slate-700 font-medium hover:bg-slate-50 transition`}>Credit/Debit Card</button>
+              <button onClick={() => setPaymentMethod('Netbanking')} className={`w-full py-3 rounded-lg border ${paymentMethod === 'Netbanking' ? 'border-blue-600 bg-blue-50' : 'border-slate-200'} text-slate-700 font-medium hover:bg-slate-50 transition`}>Netbanking</button>
             </div>
-            <button className="w-full py-3 rounded-lg bg-blue-600 text-white font-bold text-lg shadow hover:bg-blue-700 transition-colors">Complete Payment (₹{bookingAmount})</button>
+            {error && <div className="text-red-500 text-sm mb-2">{error}</div>}
+            <button onClick={handleCompletePayment} disabled={loading} className="w-full py-3 rounded-lg bg-blue-600 text-white font-bold text-lg shadow hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+              {loading ? 'Processing...' : `Complete Payment (₹${bookingAmount})`}
+            </button>
           </div>
         </div>
       </div>
@@ -134,7 +205,7 @@ function Plans() {
   };
 
   // Modal component
-  const PlanModal = ({ plan, onClose }) => {
+  const PlanModal = ({ plan, onClose, planIdx }) => {
     const splitAmount = plan.price;
     const bookingAmount = Math.ceil(plan.price * 0.10);
     return (
@@ -181,7 +252,7 @@ function Plans() {
             </div>
             <button
               className="w-full mt-2 py-3 rounded-lg bg-blue-600 text-white font-bold text-lg shadow hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-              onClick={() => { setShowUserForm(true); }}
+              onClick={() => handleBookNow(planIdx)}
             >
               Book now &nbsp; <span className="text-base font-semibold">₹{bookingAmount}</span>
             </button>
@@ -274,12 +345,13 @@ function Plans() {
           </div>
         </div>
         {selected !== null && !showUserForm && !showPayment && (
-          <PlanModal plan={subscriptions[selected]} onClose={() => setSelected(null)} />
+          <PlanModal plan={subscriptions[selected]} onClose={() => setSelected(null)} planIdx={selected} />
         )}
         {selected !== null && showUserForm && !showPayment && (
           <UserDetailsForm
             open={true}
             plan={subscriptions[selected]}
+            user={user}
             onClose={() => { setShowUserForm(false); setSelected(null); }}
             onPay={(details) => { setUserDetails(details); setShowUserForm(false); setShowPayment(true); }}
           />
@@ -291,6 +363,18 @@ function Plans() {
             bookingAmount={Math.ceil(subscriptions[selected].price * 0.10)}
             onClose={() => { setShowPayment(false); setSelected(null); }}
           />
+        )}
+        {successMsg && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl px-8 py-10 shadow text-center animate-fadeInUp flex flex-col items-center gap-4">
+              <svg className="w-16 h-16 text-green-500 mx-auto animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <div className="text-green-600 font-bold text-2xl">Payment Successful!</div>
+              <div className="text-slate-700 text-base">Thank you for your payment. You will be added to the group soon.</div>
+              <button className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors" onClick={() => setSuccessMsg('')}>Go to Home</button>
+            </div>
+          </div>
         )}
       </section>
     </main>

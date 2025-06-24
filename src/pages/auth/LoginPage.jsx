@@ -41,7 +41,12 @@ function LoginPage({ user, setUser }) {
         console.log('User written to Firestore');
       }
       if (setUser) setUser(user);
+      // Redirect to /plans if booking flow is in progress
+      if (sessionStorage.getItem('splitup_redirect_plan') !== null) {
+        navigate('/plans');
+      } else {
       navigate('/');
+      }
     } catch (err) {
       setError('Google sign-in failed. Please try again.');
     } finally {
