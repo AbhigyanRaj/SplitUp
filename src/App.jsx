@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
@@ -8,6 +8,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import Orders from "./pages/Orders";
 import PageTracker from "./components/analytics/PageTracker";
 import { auth } from './services/firebase/firebase';
+import AdminPortal from './pages/AdminPortal';
 
 const DummyPage = ({title}) => (
     <div className="bg-white min-h-screen pt-40 pb-16 text-center px-4">
@@ -16,13 +17,55 @@ const DummyPage = ({title}) => (
     </div>
 );
 
+// Admin portal protection
+function AdminRoute({ user, children }) {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!user || !user.isAdmin) {
+      navigate('/login');
+    }
+  }, [user, navigate]);
+  if (!user || !user.isAdmin) return null;
+  return children;
+}
+
+function AdminRedirector({ user }) {
+  const location = useLocation();
+  useEffect(() => {
+    if (!user) return; // Wait for user state
+    if (user.isAdmin && location.pathname !== '/admin' && location.pathname !== '/login') {
+      window.location.replace('/admin');
+    }
+  }, [user, location]);
+  return null;
+}
+
 function App() {
   const [user, setUser] = useState(null);
+  const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(setUser);
+    // Check for admin session first
+    const adminSession = localStorage.getItem('splitup_admin');
+    if (adminSession) {
+      setUser(JSON.parse(adminSession));
+      setChecked(true);
+      return; // Do NOT subscribe to Firebase auth if admin session exists
+    }
+    // Otherwise, use Firebase auth
+    const unsubscribe = auth.onAuthStateChanged(u => {
+      setUser(u);
+      setChecked(true);
+    });
     return unsubscribe;
   }, []);
+
+  // Top-level admin redirect (no flicker)
+  if (user && user.isAdmin && window.location.pathname !== '/admin') {
+    window.location.replace('/admin');
+    return null;
+  }
+  if (!checked) return null; // Wait for user state
 
   return (
     <BrowserRouter>
@@ -37,6 +80,11 @@ function App() {
         <Route path="/signup" element={<DummyPage title="Sign Up" />} />
         <Route path="/orders" element={<Orders user={user} setUser={setUser} />} />
         <Route path="/account" element={<DummyPage title="My Account" />} />
+        <Route path="/admin" element={
+          <AdminRoute user={user}>
+            <AdminPortal user={user} setUser={setUser} />
+          </AdminRoute>
+        } />
       </Routes>
       <Footer />
     </BrowserRouter>

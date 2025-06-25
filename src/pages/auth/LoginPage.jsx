@@ -14,6 +14,13 @@ function LoginPage({ user, setUser }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isAdminLogin, setIsAdminLogin] = useState(false);
+
+  const ADMIN_EMAILS = [
+    'admin@gmail.com',
+  ];
+  const SUPER_ADMIN_EMAIL = 'admin@gmail.com';
+  const ADMIN_PASSWORD = 'admin';
 
   useEffect(() => {
     if (searchParams.get('mode') === 'signup') {
@@ -58,12 +65,27 @@ function LoginPage({ user, setUser }) {
     }
   };
 
+  // Helper for case-insensitive email check
+  const isAdminEmail = (email) => ADMIN_EMAILS.some(e => e.toLowerCase() === email.toLowerCase());
+  const isSuperAdminEmail = (email) => email && email.toLowerCase() === SUPER_ADMIN_EMAIL;
+
   // Email/password sign up or login handler
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
+      if (isAdminLogin) {
+        // Admin login logic
+        if (!isAdminEmail(email)) throw new Error('Not an admin email');
+        if (password !== ADMIN_PASSWORD) throw new Error('Incorrect admin password');
+        // Simulate admin login (no Firebase auth for admin, but could be extended)
+        const adminUser = { email, isAdmin: true, isSuperAdmin: isSuperAdminEmail(email) };
+        if (setUser) setUser(adminUser);
+        localStorage.setItem('splitup_admin', JSON.stringify(adminUser));
+        window.location.replace('/admin');
+        return;
+      }
       let userCredential;
       if (isSignup) {
         if (!name) throw new Error('Name is required');
@@ -97,47 +119,41 @@ function LoginPage({ user, setUser }) {
     }
   };
 
-  // If already logged in, redirect to home
-  useEffect(() => {
-    if (user) navigate('/');
-  }, [user, navigate]);
+  // UI/UX: Role switcher
+  const role = isAdminLogin ? 'admin' : (isSignup ? 'signup' : 'login');
 
   if (user) return null;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-24 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-slate-900">
-            {isSignup ? 'Create your account' : 'Welcome back'}
+      <div className="max-w-md w-full space-y-8 bg-white rounded-xl shadow-lg p-8">
+        {/* Role switcher */}
+        <div className="flex justify-center mb-6">
+          <button
+            className={`px-4 py-2 rounded-l-lg font-semibold text-sm border ${!isAdminLogin ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'} border-slate-200 focus:outline-none`}
+            onClick={() => { setIsAdminLogin(false); setIsSignup(false); setError(''); }}
+            disabled={!isAdminLogin}
+          >
+            User
+          </button>
+          <button
+            className={`px-4 py-2 rounded-r-lg font-semibold text-sm border-l-0 border ${isAdminLogin ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'} border-slate-200 focus:outline-none`}
+            onClick={() => { setIsAdminLogin(true); setIsSignup(false); setError(''); }}
+            disabled={isAdminLogin}
+          >
+            Admin
+          </button>
+        </div>
+        <div className="text-center mb-2">
+          <h2 className="text-2xl font-extrabold text-slate-900">
+            {isAdminLogin ? 'Admin Login' : (isSignup ? 'Create your account' : 'Welcome back')}
           </h2>
         </div>
-
-        <div className="space-y-4">
-          <button
-            type="button"
-            className="w-full flex justify-center items-center py-3 px-4 border border-slate-300 rounded-lg shadow-sm bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <img className="h-5 w-5 mr-3" src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo" />
-            {isSignup ? 'Sign up with Google' : 'Continue with Google'}
-          </button>
-          {error && <div className="text-red-500 text-sm text-center mt-2">{error}</div>}
-        </div>
-
-        <div className="relative flex items-center justify-center">
-          <div className="w-full border-t border-slate-200" />
-          <div className="relative flex justify-center text-sm">
-            <span className="px-3 bg-slate-50 text-slate-500">
-              or
-            </span>
-          </div>
-        </div>
-
+        {/* Auth form */}
         <form className="space-y-4" action="#" method="POST" onSubmit={handleEmailAuth}>
           <div className="space-y-4 rounded-md">
-            {isSignup && (
+            {/* Name field only for user signup */}
+            {isSignup && !isAdminLogin && (
               <div>
                 <label htmlFor="name" className="sr-only">Full Name</label>
                 <input
@@ -145,7 +161,7 @@ function LoginPage({ user, setUser }) {
                   name="name"
                   type="text"
                   autoComplete="name"
-                  required={isSignup}
+                  required={isSignup && !isAdminLogin}
                   className="appearance-none relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Full Name"
                   value={name}
@@ -198,85 +214,47 @@ function LoginPage({ user, setUser }) {
               </button>
             </div>
           </div>
+          {/* Google button only for user login/signup */}
+          {!isAdminLogin && (
+            <button
+              type="button"
+              className="w-full flex justify-center items-center py-3 px-4 border border-slate-300 rounded-lg shadow-sm bg-white text-sm font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60"
+              onClick={handleGoogleSignIn}
+              disabled={loading}
+            >
+              <img className="h-5 w-5 mr-3" src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo" />
+              {isSignup ? 'Sign up with Google' : 'Continue with Google'}
+            </button>
+          )}
           <button
             type="submit"
             className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-60"
             disabled={loading}
           >
-            {loading ? (isSignup ? 'Signing up...' : 'Logging in...') : (isSignup ? 'Sign up with Email' : 'Log in with Email')}
+            {loading ? (isAdminLogin ? 'Logging in...' : (isSignup ? 'Signing up...' : 'Logging in...')) : (isAdminLogin ? 'Admin Login' : (isSignup ? 'Sign up with Email' : 'Log in with Email'))}
           </button>
           {error && <div className="text-red-500 text-sm text-center mt-2">{error}</div>}
         </form>
-
-        <div className="relative flex items-center justify-center mt-6">
-          <div className="w-full border-t border-slate-200" />
-          <div className="relative flex justify-center text-sm">
-            <span className="px-3 bg-slate-50 text-slate-500">
-              or (Phone/OTP Coming Soon)
-            </span>
-          </div>
-        </div>
-        <form className="space-y-4" action="#" method="POST" onSubmit={e => e.preventDefault()}>
-          <div className="space-y-4 rounded-md">
-            <div>
-              <label htmlFor="phone" className="sr-only">Phone Number</label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                required
-                className="appearance-none relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="Phone Number"
-                disabled
-              />
-            </div>
-            <div>
-              <label htmlFor="otp" className="sr-only">OTP</label>
-              <input
-                id="otp"
-                name="otp"
-                type="text"
-                autoComplete="one-time-code"
-                required
-                className="appearance-none relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-500 text-slate-900 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                placeholder="OTP"
-                disabled
-              />
-            </div>
-          </div>
-          <div className="bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg px-4 py-3 text-sm text-center">
-            Phone number and OTP {isSignup ? 'sign up' : 'login'} is <span className="font-semibold">under development</span>.<br />
-            Please use Google or Email {isSignup ? 'sign up' : 'login'} for now.
-          </div>
-          <div>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-300 cursor-not-allowed"
-              disabled
-            >
-              {isSignup ? 'Sign up with OTP (Coming Soon)' : 'Log in with OTP (Coming Soon)'}
-            </button>
-          </div>
-        </form>
-
-        <p className="text-center text-sm text-slate-600">
-          {isSignup ? (
-            <>
-              Already have an account?{' '}
-              <button type="button" className="font-medium text-blue-600 hover:text-blue-500 underline" onClick={() => setIsSignup(false)}>
-                Log in
-              </button>
-            </>
-          ) : (
-            <>
-              Don't have an account?{' '}
-              <button type="button" className="font-medium text-blue-600 hover:text-blue-500 underline" onClick={() => setIsSignup(true)}>
-                Sign up
-              </button>
-            </>
-          )}
-        </p>
+        {/* Switch between login/signup for user only */}
+        {!isAdminLogin && (
+          <p className="text-center text-sm text-slate-600 mt-4">
+            {isSignup ? (
+              <>
+                Already have an account?{' '}
+                <button type="button" className="font-medium text-blue-600 hover:text-blue-500 underline" onClick={() => setIsSignup(false)}>
+                  Log in
+                </button>
+              </>
+            ) : (
+              <>
+                Don't have an account?{' '}
+                <button type="button" className="font-medium text-blue-600 hover:text-blue-500 underline" onClick={() => setIsSignup(true)}>
+                  Sign up
+                </button>
+              </>
+            )}
+          </p>
+        )}
       </div>
     </div>
   );
