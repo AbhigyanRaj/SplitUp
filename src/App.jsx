@@ -6,6 +6,7 @@ import HomePage from "./pages/HomePage";
 import Plans from "./pages/Plans";
 import LoginPage from "./pages/auth/LoginPage";
 import Orders from "./pages/Orders";
+import PageTracker from "./components/analytics/PageTracker";
 import { auth } from './services/firebase/firebase';
 
 const DummyPage = ({title}) => (
@@ -25,6 +26,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <PageTracker />
       <Navbar user={user} setUser={setUser} />
       <Routes>
         <Route path="/" element={<HomePage />} />
