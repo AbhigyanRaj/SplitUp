@@ -19,18 +19,18 @@
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Problem Statement](#problem-statement)
-- [Solution Architecture](#solution-architecture)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [System Architecture](#system-architecture)
-- [Installation & Setup](#installation--setup)
-- [Usage](#usage)
-- [API Documentation](#api-documentation)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+| Section | Description |
+|---------|-------------|
+| [🎯 Overview](#overview) | Project introduction and key benefits |
+| [🚨 Problem Statement](#problem-statement) | Subscription cost crisis analysis |
+| [🏗️ Solution Architecture](#solution-architecture) | Technical approach and user flow |
+| [✨ Features](#features) | Core, security, and admin features |
+| [🛠️ Technology Stack](#technology-stack) | Frontend, backend, and analytics stack |
+| [🏛️ System Architecture](#system-architecture) | Database schema and component structure |
+| [🚀 Installation & Setup](#installation--setup) | Step-by-step setup guide |
+| [📖 Usage](#usage) | User and admin instructions |
+| [🔌 API Documentation](#api-documentation) | Code examples and endpoints |
+| [🤝 Contributing](#contributing) | Guidelines for contributors |
 
 ---
 
@@ -400,40 +400,7 @@ analytics.trackEvent('subscription_selected', {
 
 ---
 
-## 🚀 Deployment
 
-### Vercel Deployment
-
-1. **Connect Repository**
-   ```bash
-   # Install Vercel CLI
-   npm i -g vercel
-   
-   # Deploy
-   vercel
-   ```
-
-2. **Environment Variables**
-   - Add all environment variables in Vercel dashboard
-   - Ensure Firebase config is properly set
-
-3. **Custom Domain** (Optional)
-   - Configure custom domain in Vercel dashboard
-   - Update DNS settings
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-### Preview Build
-
-```bash
-npm run preview
-```
-
----
 
 ## 🤝 Contributing
 
@@ -465,11 +432,7 @@ We welcome contributions! Please follow these steps:
 
 ---
 
-## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
 
 ## 🙏 Acknowledgments
 
